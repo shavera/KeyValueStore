@@ -11,6 +11,9 @@ void KeyValueStore::addValue(
 }
 
 std::any KeyValueStore::getValue(uint64_t key) {
+  if(0 == store_.count(key)){
+    return {};
+  }
   const auto& [value, deadline] = store_.at(key);
   return value;
 }
