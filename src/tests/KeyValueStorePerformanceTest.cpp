@@ -8,8 +8,8 @@
 #include "gtest/gtest.h"
 
 #include <cstdint>
+#include <future>
 #include <random>
-#include <thread>
 
 namespace {
 
@@ -110,6 +110,7 @@ public:
       auto value = valueDistribution(rng);
       auto lifetime = std::chrono::milliseconds{deadlineDistribution(rng)};
       auto deadline = std::chrono::system_clock::now() + lifetime;
+      keys[i] = key;
       keyValueStore.addValue(key, value, lifetime);
       expectedValues.emplace(key, value);
       expectedDeadlines.emplace(key, deadline);
@@ -119,6 +120,13 @@ public:
     std::cout << "Set Up elapsed time: " << elapsedTime.count() << std::endl;
   }
 
+  /// set the value at key to 0, return the amount of time to set the value.
+  std::chrono::microseconds addValueWorker(KeyValueStore::KeyType key);
+
+  /// get the value for key from the store, return the amount of time to get the value.
+  std::chrono::microseconds getValueWorker(KeyValueStore::KeyType key);
+
+  std::array<size_t, pairCount> keys{0};
   std::unordered_map<size_t, std::chrono::time_point<std::chrono::system_clock>> expectedDeadlines;
 };
 
@@ -144,6 +152,67 @@ TEST_F(KVStorePerformanceWithDeadlinesTest, deadlineChecked){
     }
   }
   std::cout << "Encountered " << expiredCount << " expired entries." << std::endl;
+}
+
+TEST_F(KVStorePerformanceWithDeadlinesTest, manyThreadAccess){
+  // Test what happens when many threads attempt to perform actions possibly simultaneously on the store
+  // Start with pre-seeded store so that some threads can report back their activity.
+
+  // Note, trying to async launch _all_ keys was excessive. Since the keys are shuffled, a subset of keys
+  // should be sufficient to test with
+  constexpr size_t maxAsyncLaunches{1000};
+
+  // not strictly necessary, but we can also profile how long it takes to set data as well
+  std::array<size_t, 100> addTimeHistogram{0};
+  std::vector<std::future<std::chrono::microseconds>> addFutures;
+  std::vector<std::future<std::chrono::microseconds>> getFutures;
+
+  // randomize the order of keys
+  std::shuffle(keys.begin(), keys.end(), rng);
+
+  std::bernoulli_distribution actionSelector{0.5};
+
+  // for each key, asynchronously either set or get the value at that key, returning futures as a result.
+  std::cout << "Beginning ASync command launch" << std::endl;
+  for(auto i{0u}; i < maxAsyncLaunches; ++i){
+    auto key = keys.at(i);
+    bool useGet = actionSelector(rng);
+    if(useGet){
+      auto futureResult = std::async(std::launch::async, [this, key](){return getValueWorker(key);});
+      getFutures.emplace_back(std::move(futureResult));
+    } else {
+      auto futureResult = std::async(std::launch::async, [this, key](){return addValueWorker(key);});
+      addFutures.emplace_back(std::move(futureResult));
+    }
+  }
+  std::cout<< "All Async commands launched" << std::endl;
+
+  for(auto& future : addFutures){
+    size_t bin = future.get().count()/microsecondResolution;
+    addTimeHistogram[bin] += 1;
+  }
+
+  for(auto& future : getFutures){
+    size_t bin = future.get().count()/microsecondResolution;
+    timeHistogram[bin] += 1;
+  }
+
+}
+
+/// set the value at key to 0, return the amount of time to set the value.
+std::chrono::microseconds KVStorePerformanceWithDeadlinesTest::addValueWorker(KeyValueStore::KeyType key){
+  const auto start = std::chrono::system_clock::now();
+  keyValueStore.addValue(key, 0);
+  const auto stop = std::chrono::system_clock::now();
+  return std::chrono::duration_cast<std::chrono::microseconds>(start-stop);
+}
+
+/// get the value for key from the store, return the amount of time to get the value.
+std::chrono::microseconds KVStorePerformanceWithDeadlinesTest::getValueWorker(KeyValueStore::KeyType key){
+  const auto start = std::chrono::system_clock::now();
+  auto value = keyValueStore.getValue(key);
+  const auto stop = std::chrono::system_clock::now();
+  return std::chrono::duration_cast<std::chrono::microseconds>(start-stop);
 }
 
 } // namespace
