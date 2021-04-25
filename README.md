@@ -32,3 +32,12 @@ Implementation plan:
 1. Test and implement the library functionality
 2. Write tests around performance metrics
 3. Profile and optimize to meet performance metrics
+
+# Build and run instructions
+Familiarity with CMake is assumed if one wishes to change any build values, enable parallel builds, etc.
+1. After cloning repo, make directory `build` and cd into it
+2. run `cmake .. -DCMAKE_BUILD_TYPE=Release`
+3. run `cmake --build . --target all`
+4. cd to `src/tests` in the build folder and run `./key_value_store_test`
+
+Test will output some histograms of 'get' access times, with 100 bins and some indicated bin width.
