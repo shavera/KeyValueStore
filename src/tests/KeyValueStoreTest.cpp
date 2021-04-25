@@ -59,6 +59,17 @@ TEST_F(KeyValueStoreTest, transactSimpleValues){
   }
 }
 
+TEST_F(KeyValueStoreTest, canDistinguishWhenOverridingEntry){
+  const auto first = kvStore.addValue(1, 1234);
+  const auto second = kvStore.addValue(1, 33333);
+  // want to also test that overrides allow for changing the type
+  const auto third = kvStore.addValue(1, "alpha");
+
+  EXPECT_EQ(KeyValueStore::ValueAdded::DidNotOverride, first);
+  EXPECT_EQ(KeyValueStore::ValueAdded::DidOverride, second);
+  EXPECT_EQ(KeyValueStore::ValueAdded::DidOverride, third);
+}
+
 TEST_F(KeyValueStoreTest, storeCanStoreEmptyAny){
   /// @test The table may store an 'any' value that is 'empty' and this is distinct from returning an invalid result
   kvStore.addValue(1234, std::any{});
