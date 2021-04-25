@@ -57,6 +57,13 @@ public:
    */
   [[nodiscard]] std::optional<std::any> getValue(KeyType key);
 
+  /**
+   * @brief Remove an entry indicated by the provided key
+   *
+   * @returns false if no such entry existed to remove;
+   */
+  bool deleteValue(KeyType key);
+
 private:
   using OptionalDeadline =
       std::optional<std::chrono::time_point<std::chrono::system_clock>>;

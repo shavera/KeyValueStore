@@ -38,6 +38,15 @@ std::optional<std::any> KeyValueStore::getValue(KeyValueStore::KeyType key) {
   return value;
 }
 
+bool KeyValueStore::deleteValue(KeyValueStore::KeyType key) {
+  std::lock_guard<std::mutex> guard{mutex()};
+  if(0 == store_.count(key)){
+    return false;
+  }
+  store_.erase(key);
+  return true;
+}
+
 namespace {
 std::optional<std::chrono::time_point<std::chrono::system_clock>> calculateDeadline(
     const KeyValueStore::OptionalDuration& lifetime){

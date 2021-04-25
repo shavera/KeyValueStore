@@ -108,4 +108,22 @@ TEST_F(KeyValueStoreTest, withLifetime){
   EXPECT_FALSE(result_2.has_value());
 }
 
+TEST_F(KeyValueStoreTest, deleteValue){
+  const KeyValueStore::KeyType key{123455};
+  kvStore.addValue(key, 123.12341);
+  EXPECT_TRUE(kvStore.deleteValue(key));
+
+  // now that it's deleted, we shouldn't be able to access it.
+  const auto result = kvStore.getValue(key);
+  EXPECT_FALSE(result.has_value());
+
+  //expect that deleting an unused key returns false but doesn't throw
+  bool deleted{true};
+  EXPECT_NO_THROW(deleted = kvStore.deleteValue(2*key));
+  EXPECT_FALSE(deleted);
+
+  // expect that deleting the same thing we deleted above returns false
+  EXPECT_FALSE(kvStore.deleteValue(key));
+}
+
 } // namespace
