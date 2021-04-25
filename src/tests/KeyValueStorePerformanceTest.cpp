@@ -143,7 +143,7 @@ TEST_F(KVStorePerformanceWithDeadlinesTest, deadlineChecked){
       EXPECT_TRUE(result.has_value());
     }
   }
-  std::cout << "Encountered " << expiredCount << " expired entries.";
+  std::cout << "Encountered " << expiredCount << " expired entries." << std::endl;
 }
 
 } // namespace

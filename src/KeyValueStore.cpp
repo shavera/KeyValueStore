@@ -4,13 +4,18 @@
 
 #include "KeyValueStore/KeyValueStore.h"
 
+#include <mutex>
+
 namespace {
 std::optional<std::chrono::time_point<std::chrono::system_clock>> calculateDeadline(
     const KeyValueStore::OptionalDuration & lifetime);
+
+std::mutex& mutex();
 } // namespace
 
 KeyValueStore::ValueAdded KeyValueStore::addValue(
     KeyValueStore::KeyType key, std::any value, KeyValueStore::OptionalDuration pairLifetime) {
+  std::lock_guard<std::mutex> guard{mutex()};
   auto overridden = 0 == store_.count(key) ? ValueAdded::DidNotOverride : ValueAdded::DidOverride;
 
   ValuePair valuePair{std::move(value), calculateDeadline(pairLifetime)};
@@ -20,6 +25,7 @@ KeyValueStore::ValueAdded KeyValueStore::addValue(
 }
 
 std::optional<std::any> KeyValueStore::getValue(KeyValueStore::KeyType key) {
+  std::lock_guard<std::mutex> guard{mutex()};
   if(0 == store_.count(key)){
     return {};
   }
@@ -40,4 +46,10 @@ std::optional<std::chrono::time_point<std::chrono::system_clock>> calculateDeadl
   }
   return std::chrono::system_clock::now() + lifetime.value();
 }
+
+std::mutex& mutex(){
+  static std::mutex m;
+  return m;
+}
+
 } // namespace
