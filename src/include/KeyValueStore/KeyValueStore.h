@@ -13,9 +13,9 @@
 class KeyValueStore {
 public:
   using OptionalDuration = std::optional<std::chrono::milliseconds>;
-  void addValue(int64_t key, std::any value, OptionalDuration pairLifetime);
+  void addValue(uint64_t key, std::any value, OptionalDuration pairLifetime = {});
 
-  std::optional<std::any> getValue(int64_t key);
+  std::any getValue(uint64_t key);
 
 private:
   using OptionalDeadline =
@@ -23,7 +23,7 @@ private:
 
   using ValuePair = std::pair<std::any, OptionalDeadline>;
 
-  std::unordered_map<int64_t, ValuePair> store_;
+  std::unordered_map<uint64_t, ValuePair> store_;
 };
 
 #endif // KEYVALUESTORE_KEYVALUESTORE_H
