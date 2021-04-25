@@ -27,7 +27,9 @@ TEST_F(KeyValueStoreTest, transactSimpleValues){
 
   {
     SCOPED_TRACE("First value string");
-    auto value = kvStore.getValue(1);
+    auto result = kvStore.getValue(1);
+    ASSERT_TRUE(result.has_value());
+    auto value = result.value();
     ASSERT_EQ(typeid(valueString), value.type());
     std::string string;
     ASSERT_NO_THROW(string = std::any_cast<std::string>(value));
@@ -36,7 +38,9 @@ TEST_F(KeyValueStoreTest, transactSimpleValues){
 
   {
     SCOPED_TRACE("Second value string");
-    auto value = kvStore.getValue(123);
+    auto result = kvStore.getValue(123);
+    ASSERT_TRUE(result.has_value());
+    auto value = result.value();
     ASSERT_EQ(typeid(otherValueString), value.type());
     std::string string;
     ASSERT_NO_THROW(string = std::any_cast<std::string>(value));
@@ -45,7 +49,9 @@ TEST_F(KeyValueStoreTest, transactSimpleValues){
 
   {
     SCOPED_TRACE("double value");
-    auto value = kvStore.getValue(9999);
+    auto result = kvStore.getValue(9999);
+    ASSERT_TRUE(result.has_value());
+    auto value = result.value();
     ASSERT_EQ(typeid(someNumber), value.type());
     double number;
     ASSERT_NO_THROW(number = std::any_cast<double>(value));
@@ -53,10 +59,18 @@ TEST_F(KeyValueStoreTest, transactSimpleValues){
   }
 }
 
-TEST_F(KeyValueStoreTest, missingValueReturnsEmptyAny){
-  std::any value{};
-  ASSERT_NO_THROW(value = kvStore.getValue(1));
-  EXPECT_FALSE(value.has_value());
+TEST_F(KeyValueStoreTest, storeCanStoreEmptyAny){
+  /// @test The table may store an 'any' value that is 'empty' and this is distinct from returning an invalid result
+  kvStore.addValue(1234, std::any{});
+  auto result = kvStore.getValue(1234);
+  ASSERT_TRUE(result.has_value());
+  EXPECT_FALSE(result.value().has_value());
+}
+
+TEST_F(KeyValueStoreTest, missingValueReturnsEmptyOptional){
+  std::optional<std::any> result{};
+  ASSERT_NO_THROW(result = kvStore.getValue(1));
+  EXPECT_FALSE(result.has_value());
 }
 
 } // namespace
