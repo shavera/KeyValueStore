@@ -21,7 +21,7 @@ TEST_F(KeyValueStoreTest, transactSimpleValues){
 
   const std::string otherValueString{"Beta"};
   kvStore.addValue(123, otherValueString);
-  
+
   const double someNumber{3.1416};
   kvStore.addValue(9999, someNumber);
 
@@ -51,6 +51,12 @@ TEST_F(KeyValueStoreTest, transactSimpleValues){
     ASSERT_NO_THROW(number = std::any_cast<double>(value));
     EXPECT_EQ(number, someNumber);
   }
+}
+
+TEST_F(KeyValueStoreTest, missingValueReturnsEmptyAny){
+  std::any value{};
+  ASSERT_NO_THROW(value = kvStore.getValue(1));
+  EXPECT_FALSE(value.has_value());
 }
 
 } // namespace
