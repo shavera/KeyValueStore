@@ -10,7 +10,8 @@ FetchContent_MakeAvailable(googletest)
 add_executable(key_value_store_test)
 target_sources(key_value_store_test
     PRIVATE
-        KeyValueStoreTest.cpp)
+        KeyValueStoreTest.cpp
+        KeyValueStorePerformanceTest.cpp)
 
 target_link_libraries(key_value_store_test
     PRIVATE
