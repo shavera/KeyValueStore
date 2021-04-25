@@ -33,3 +33,6 @@
 
 # Intellij
 .idea/
+
+# Build folders
+*build*/
