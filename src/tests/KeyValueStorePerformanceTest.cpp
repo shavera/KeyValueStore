@@ -27,8 +27,7 @@ void testAndCast(const std::optional<std::any>& inValue, T& outVar){
 //constexpr bool DEBUG_TEST{true};
 constexpr bool DEBUG_TEST{false};
 
-//constexpr int microsecondResolution{1};
-constexpr int microsecondResolution{100};
+constexpr int microsecondResolution{1};
 
 constexpr size_t pairCount{DEBUG_TEST ? 10000 : 10'000'000};
 
@@ -53,11 +52,11 @@ public:
   }
 
   void TearDown() override{
-    std::cout << "[";
+    std::cout << "Access time histogram, with bin resolution of " << microsecondResolution << " microseconds\n[";
     for(const auto& v : timeHistogram){
       std::cout << v << ", ";
     }
-    std::cout << "]" << std::endl;
+    std::cout << "\b\b" << "]" << std::endl;
   }
 
   void updateHistogram(const TimePoint& start, const TimePoint& stop){
@@ -69,7 +68,7 @@ public:
 
       ASSERT_TRUE(elapsedTime.count() >= 0);
     }
-    size_t bin = elapsedTime.count()/microsecondResolution;
+    size_t bin = std::min(static_cast<size_t>(elapsedTime.count()/microsecondResolution), (timeHistogram.size() - 1));
     timeHistogram[bin] += 1;
   }
 
@@ -77,8 +76,7 @@ public:
 
   KeyValueStore keyValueStore;
 
-  // Going to bin by 100 microsecond bins up to 10 milliseconds
-  // (note, altering microsecond resolution variable will keep 100 bins but each bin will be that resolution in width)
+  // 100 histogram bins, with each bin width being defined by microsecondResolution value
   std::array<size_t, 100> timeHistogram{0};
 };
 
@@ -188,12 +186,12 @@ TEST_F(KVStorePerformanceWithDeadlinesTest, manyThreadAccess){
   std::cout<< "All Async commands launched" << std::endl;
 
   for(auto& future : addFutures){
-    size_t bin = future.get().count()/microsecondResolution;
+    size_t bin = std::min(static_cast<size_t>(future.get().count()/microsecondResolution), (timeHistogram.size() - 1));
     addTimeHistogram[bin] += 1;
   }
 
   for(auto& future : getFutures){
-    size_t bin = future.get().count()/microsecondResolution;
+    size_t bin = std::min(static_cast<size_t>(future.get().count()/microsecondResolution), (timeHistogram.size() - 1));
     timeHistogram[bin] += 1;
   }
 
