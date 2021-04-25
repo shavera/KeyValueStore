@@ -6,9 +6,20 @@
 
 #include "gtest/gtest.h"
 
+#include <thread>
+
 namespace {
 
 using namespace ::testing;
+using namespace std::chrono_literals;
+
+template <typename T>
+void testAndCast(const std::optional<std::any>& inValue, T& outVar){
+  ASSERT_TRUE(inValue.has_value());
+  ASSERT_TRUE(inValue.value().has_value());
+  ASSERT_EQ(inValue.value().type(), typeid(T));
+  outVar = std::any_cast<T>(inValue.value());
+}
 
 class KeyValueStoreTest : public Test{
 public:
@@ -28,34 +39,22 @@ TEST_F(KeyValueStoreTest, transactSimpleValues){
   {
     SCOPED_TRACE("First value string");
     auto result = kvStore.getValue(1);
-    ASSERT_TRUE(result.has_value());
-    auto value = result.value();
-    ASSERT_EQ(typeid(valueString), value.type());
     std::string string;
-    ASSERT_NO_THROW(string = std::any_cast<std::string>(value));
-    EXPECT_EQ(string, valueString);
+    testAndCast(result, string);
   }
 
   {
     SCOPED_TRACE("Second value string");
     auto result = kvStore.getValue(123);
-    ASSERT_TRUE(result.has_value());
-    auto value = result.value();
-    ASSERT_EQ(typeid(otherValueString), value.type());
     std::string string;
-    ASSERT_NO_THROW(string = std::any_cast<std::string>(value));
-    EXPECT_EQ(string, otherValueString);
+    testAndCast(result, string);
   }
 
   {
     SCOPED_TRACE("double value");
     auto result = kvStore.getValue(9999);
-    ASSERT_TRUE(result.has_value());
-    auto value = result.value();
-    ASSERT_EQ(typeid(someNumber), value.type());
     double number;
-    ASSERT_NO_THROW(number = std::any_cast<double>(value));
-    EXPECT_EQ(number, someNumber);
+    testAndCast(result, number);
   }
 }
 
@@ -82,6 +81,31 @@ TEST_F(KeyValueStoreTest, missingValueReturnsEmptyOptional){
   std::optional<std::any> result{};
   ASSERT_NO_THROW(result = kvStore.getValue(1));
   EXPECT_FALSE(result.has_value());
+}
+
+TEST_F(KeyValueStoreTest, withLifetime){
+  const auto lifetime{2ms};
+  const std::string expectedValue{"KeyValueStoreTest.withLifetime"};
+  const size_t key{5555};
+  kvStore.addValue(key, expectedValue, lifetime);
+  // get value immediately
+  auto result_0 = kvStore.getValue(key);
+
+  // wait half a millisecond, should still be valid, get value
+  std::this_thread::sleep_for(500us);
+  auto result_1 = kvStore.getValue(key);
+
+  // wait the lifetime (+1 ms), should no longer be valid, get value
+  std::this_thread::sleep_for(lifetime + 1ms);
+  auto result_2 = kvStore.getValue(key);
+
+  std::string string_0, string_1;
+  testAndCast(result_0, string_0);
+  EXPECT_EQ(expectedValue, string_0);
+  testAndCast(result_1, string_1);
+  EXPECT_EQ(expectedValue, string_1);
+
+  EXPECT_FALSE(result_2.has_value());
 }
 
 } // namespace
