@@ -27,3 +27,8 @@ Additional notes:
     It's a newer type and I'm aware of at least one bug in some compilers dealing with it, but hopefully that won't 
     impact this code. It will be up to the user to perform the appropriate `any_cast` to the appropriate type.
 
+Implementation plan:
+
+1. Test and implement the library functionality
+2. Write tests around performance metrics
+3. Profile and optimize to meet performance metrics
