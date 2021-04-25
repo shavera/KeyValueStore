@@ -160,7 +160,7 @@ TEST_F(KVStorePerformanceWithDeadlinesTest, manyThreadAccess){
 
   // Note, trying to async launch _all_ keys was excessive. Since the keys are shuffled, a subset of keys
   // should be sufficient to test with
-  constexpr size_t maxAsyncLaunches{1000};
+  constexpr size_t maxAsyncLaunches{std::min(pairCount, static_cast<decltype(pairCount)>(20000))};
 
   // not strictly necessary, but we can also profile how long it takes to set data as well
   std::array<size_t, 100> addTimeHistogram{0};
@@ -204,7 +204,7 @@ std::chrono::microseconds KVStorePerformanceWithDeadlinesTest::addValueWorker(Ke
   const auto start = std::chrono::system_clock::now();
   keyValueStore.addValue(key, 0);
   const auto stop = std::chrono::system_clock::now();
-  return std::chrono::duration_cast<std::chrono::microseconds>(start-stop);
+  return std::chrono::duration_cast<std::chrono::microseconds>(stop-start);
 }
 
 /// get the value for key from the store, return the amount of time to get the value.
@@ -212,7 +212,10 @@ std::chrono::microseconds KVStorePerformanceWithDeadlinesTest::getValueWorker(Ke
   const auto start = std::chrono::system_clock::now();
   auto value = keyValueStore.getValue(key);
   const auto stop = std::chrono::system_clock::now();
-  return std::chrono::duration_cast<std::chrono::microseconds>(start-stop);
+  if(DEBUG_TEST){
+    std::cout << std::chrono::duration<double>(stop - start).count() << std::endl;
+  }
+  return std::chrono::duration_cast<std::chrono::microseconds>(stop-start);
 }
 
 } // namespace
