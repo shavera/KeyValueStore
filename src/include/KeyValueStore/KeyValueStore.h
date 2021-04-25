@@ -11,9 +11,13 @@
 #include <unordered_map>
 
 /**
- * Class that can store uint64 keys mapped to 'std::any' values. Entries (key-value pairs) may also allow for
+ * Class that can store size_t type keys mapped to 'std::any' values. Entries (key-value pairs) may also allow for
  * a lifetime to be specified. If more time passes between when the entry is added and when it is requested, the
  * request will not return a valid result.
+ *
+ * size_t type was chosen as a key type because it is the result of std::hash methods. So if any type of key is desired,
+ * one may define a hash method that creates a 'size_t' type and use that for the key. The usual
+ * considerations of hash collisions must be considered whether appropriate.
  */
 class KeyValueStore {
 public:
@@ -22,6 +26,8 @@ public:
 
   /// Enums representing whether addValue overrode an existing value
   enum class ValueAdded : bool {DidNotOverride = false, DidOverride = true};
+
+  using KeyType = size_t;
 
   /**
    * @brief Add an entry to the store
@@ -39,7 +45,7 @@ public:
    *
    * @returns an enum indicating whether this entry overrode an existing value in the table.
    */
-  ValueAdded addValue(uint64_t key, std::any value, OptionalDuration pairLifetime = {});
+  ValueAdded addValue(KeyType key, std::any value, OptionalDuration pairLifetime = {});
 
   /**
    * @brief Attempt to retrieve a value associated with a given key.
@@ -49,7 +55,7 @@ public:
    *
    * @returns An optional any. If the optional does not have a value it could not find a valid result.
    */
-  [[nodiscard]] std::optional<std::any> getValue(uint64_t key);
+  [[nodiscard]] std::optional<std::any> getValue(KeyType key);
 
 private:
   using OptionalDeadline =
@@ -57,7 +63,7 @@ private:
 
   using ValuePair = std::pair<std::any, OptionalDeadline>;
 
-  std::unordered_map<uint64_t, ValuePair> store_;
+  std::unordered_map<KeyType, ValuePair> store_;
 };
 
 #endif // KEYVALUESTORE_KEYVALUESTORE_H

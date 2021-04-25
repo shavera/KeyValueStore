@@ -5,14 +5,14 @@
 #include "KeyValueStore/KeyValueStore.h"
 
 KeyValueStore::ValueAdded KeyValueStore::addValue(
-    uint64_t key, std::any value, KeyValueStore::OptionalDuration pairLifetime) {
+    KeyValueStore::KeyType key, std::any value, KeyValueStore::OptionalDuration pairLifetime) {
   auto overridden = 0 == store_.count(key) ? ValueAdded::DidNotOverride : ValueAdded::DidOverride;
   ValuePair valuePair{std::move(value), {}};
   store_.emplace(key, std::move(valuePair));
   return overridden;
 }
 
-std::optional<std::any> KeyValueStore::getValue(uint64_t key) {
+std::optional<std::any> KeyValueStore::getValue(KeyValueStore::KeyType key) {
   if(0 == store_.count(key)){
     return {};
   }
